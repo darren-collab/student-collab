@@ -77,13 +77,16 @@ ASGI_APPLICATION = 'CollabSpace.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import os
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": 'collabspace',
-        "USER": 'postgres',
-        "PASSWORD": 'root',  # Replace with your actual password
-        "HOST": 'localhost',
+        "NAME": os.environ.get('DB_NAME', 'collabspace'),
+        "USER": os.environ.get('DB_USER', 'postgres'),
+        "PASSWORD": os.environ.get('DB_PASSWORD', 'root'),
+        "HOST": os.environ.get('DB_HOST', 'localhost'),
+        "PORT": os.environ.get('DB_PORT', '5432'),
     }
 }
 
