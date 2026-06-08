@@ -1,0 +1,35 @@
+
+{% load static %}
+<!-- Load your CSS -->
+<head>
+  <link href="{% static 'MultiSelect.css' %}" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  {{ form.non_field_errors }}
+  {% for field in form %}
+    <div style="margin-bottom: 1rem;">
+      {{ field.label_tag }}<br>
+
+      {% if field.name == 'team_members' %}
+        <select id="team_members" name="team_members" 
+                data-placeholder="Select team members" 
+                multiple data-multi-select>
+          {% for user in form.team_members.field.queryset %}
+            <option value="{{ user.id }}" 
+              {% if user in form.initial.team_members %}selected{% endif %}>
+              {{ user.username }}
+            </option>
+          {% endfor %}
+        </select>
+      {% else %}
+        {{ field }}<br>
+      {% endif %}
+
+      {{ field.errors }}
+    </div>
+  {% endfor %}
+
+  <!-- Load your JS -->
+  <script src="{% static 'MultiSelect.js' %}"></script>
+</body>

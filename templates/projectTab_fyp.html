@@ -1,0 +1,1452 @@
+{% load static %}
+
+{% load project_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <title>CollabSpace Projects</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+	
+	:root {
+	  --sb-width: 12.5rem;
+	  --transition-duration: 0.3s;
+	}
+
+    body {
+      display: flex;
+      /* background-color: #f8fafc;  potential colour scheme: #dce3ff */
+      background-color: #e6e6e6;
+      color: #1f2937;
+      min-height: 100vh;
+    }
+	
+	body.sb-collapsed{
+		--sb-width:5rem;
+	}
+
+    .sidebar {
+      position: fixed;
+      inset:0 auto 0 0;
+      padding:1rem;
+      width: var(--sb-width);
+      background-color: #928bff;
+      transition: width var(--transition-duration) ease;
+      z-index: 20;
+    }
+	
+	.sidebar nav{
+		height:100%;
+	}
+
+	.sidebar nav ul{
+		list-style:none;
+		height:100%;
+		display:flex;
+		flex-flow:column;
+		gap:0.25rem;
+	}
+	
+	.sidebar nav a{
+	  display: flex;
+	  align-items: center;
+	  gap: 0.625rem;
+	  padding: 0.625rem 0.875rem;
+	  font-size: 1.25rem;
+	  line-height: 1;
+	  color: #374151;
+	  border-radius:0.375rem;
+	  text-decoration: none;
+	}
+	
+	.sidebar nav span{
+	  font-size: 0.875rem;
+	  opacity: 1;
+	  visibility: visible;
+	  transition:
+		opacity 0.5s ease-in-out;
+		visibility: 0.5s ease-in-out;
+	}
+	
+	body.sb-collapsed nav a span{
+		opacity: 0;
+		visibility: hidden;
+	}
+	
+	.sidebar nav a.active,
+	.sidebar nav a:hover,
+	.sidebar nav a:focus-visible{
+	  outline:none;
+	  color: #b366fc;
+	  background-color: #fff;
+	}
+	
+	.toggle-btn i {
+	  position: absolute;
+	  top: 1rem;
+	  right: -0.75rem;
+	  width: 1.5rem;
+	  height: 1.5rem;
+	  background-color: #fff;
+	  color: #000;
+	  border: 1px solid #ccc;
+	  border-radius: 50%;
+	  cursor: pointer;
+	  z-index: 10;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  transition: transform 0.3s ease;
+	  text-decoration: none;
+	}
+
+	body.sb-collapsed .toggle-btn i {
+	  transform: rotate(180deg);
+	}
+
+    /* Top Navigation Bar */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: var(--sb-width);
+      right: 0;
+      height: 60px;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 10;
+      transition: left var(--transition-duration) ease;
+    }
+
+    .app-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #4f46e5;
+      margin-right: 30px;
+    }
+
+    .search-bar {
+      flex: 1;
+      max-width: 500px;
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px 15px 10px 40px;
+      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border-color: #a5b4fc;
+      background-color: white;
+      box-shadow: 0 0 0 3px rgba(199, 210, 254, 0.5);
+    }
+
+    .search-bar::before {
+      content: "🔍";
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.5;
+    }
+
+    .nav-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-left: auto;
+    }
+
+    .notification-icon, .profile-avatar {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .notification-icon {
+      font-size: 20px;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .profile-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #4f46e5;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 90px 30px 30px;
+      margin-left: var(--sb-width);
+      transition: margin-left var(--transition-duration) ease;
+    }
+
+    /* Projects Page Specific Styles */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+    }
+
+    .filters button,
+    .filters select {
+      margin-left: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    #addProjectBtn {
+      background-color: #4f46e5;
+      color: #000;
+      border: none;
+      transition: background-color 0.2s ease;
+    }
+
+    #addProjectBtn:hover {
+      background-color: #4338ca;
+	  color:#fff;
+    }
+
+    .project-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .project-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .project-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .status {
+      float: right;
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .done { background: #38c172; color: white; }
+    .in_progress { background: #f7b924; color: white; }
+    .planning { background: #ccc; color: #333; }
+
+    .progress-bar {
+      height: 8px;
+      background-color: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    .progress {
+      height: 100%;
+      background-color: #4f46e5;
+      transition: width 0.5s ease;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    .avatars span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: #e0e7ff;
+      border-radius: 50%;
+      margin-right: 5px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #4f46e5;
+    }
+
+    .open-btn {
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .open-btn:hover {
+      background-color: #4338ca;
+    }
+
+    .delete-btn {
+  background-color: #f8fafc;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.delete-btn:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-btn i {
+  font-size: 14px;
+}
+
+
+.edit-btn {
+  background-color: #f8fafc;
+  color: #3a71f0;
+  border: 1px solid #3a71f0;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.edit-btn:hover {
+  background-color: #3a71f0;
+  color: white;
+}
+
+.edit-btn i {
+  font-size: 14px;
+}
+
+
+
+
+/* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      margin: 40px auto;
+      overflow-y: auto; 
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .close-btn:hover {
+      color: #111827;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .form-group input, 
+    .form-group textarea, 
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-footer button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .cancel-btn {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+    }
+    .cancel-btn:hover {
+      background: #e5e7eb;
+    }
+
+    .create-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+    }
+    .create-btn:hover {
+      background: #4f46e5;
+    }
+
+
+
+/* Form Elements */
+#addProjectForm input,
+#addProjectForm textarea,
+#addProjectForm select,
+#editProjectForm input,
+#editProjectForm textarea,
+#editProjectForm select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+#addProjectForm select[multiple],
+#editProjectForm select[multiple] {
+  height: 44px;  /* Match single select height */
+  min-height: 44px;
+  background: #fff;
+  overflow-y: auto;
+}
+
+/* NEW: wrapper + paginator styles */
+    .active-box { 
+      background:#cccccc; 
+      border-radius:12px; 
+      box-shadow:0 2px 6px rgba(0,0,0,.06); 
+      padding:16px; 
+    }
+    .paginator { 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      gap:12px; 
+      padding-top:10px; 
+    }
+    .paginator a, .paginator span {
+      padding:6px 10px; 
+      border:1px solid #e5e7eb; 
+      border-radius:8px; 
+      font-size:.9rem; 
+      color:#374151; 
+      text-decoration:none; 
+      background:#fff;
+    }
+    .paginator span.disabled { 
+      opacity:.5; 
+      pointer-events:none; 
+    }
+
+    /* Past-date confirm card */
+  .confirm-overlay { 
+    display:none; 
+    position:fixed; 
+    inset:0; 
+    background:rgba(0,0,0,.45); 
+    z-index:1100; 
+    align-items:center; 
+    justify-content:center; 
+  }
+  .confirm-card { 
+    background:#fff; 
+    width: min(460px, 92vw); 
+    border-radius:12px; 
+    padding:18px; 
+    box-shadow:0 10px 30px rgba(0,0,0,.15); 
+  }
+  .confirm-card h4 { 
+    margin:0 0 8px; 
+    font-size:1.05rem; 
+  }
+  .confirm-card p { 
+    margin:0 0 14px; 
+    color:#4b5563; 
+  }
+  .confirm-actions { 
+    display:flex; 
+    justify-content:flex-end; 
+    gap:10px; 
+  }
+  .confirm-actions button { 
+    padding:8px 14px; 
+    border-radius:8px; 
+    cursor:pointer; 
+    border:1px solid #e5e7eb; 
+  }
+  .btn-cancel { background:#f3f4f6; 
+  }
+  .btn-proceed { background:#4f46e5; 
+    color:#fff; 
+    border-color:#4f46e5; 
+  }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <nav>
+      <ul>
+        <li>
+          <a href="{% url 'dashboard' %}"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
+        </li>
+        <li>
+          <a href="{% url 'project_list' %}" class="active"><i class="fa-solid fa-folder"></i><span>Projects</span></a>
+        </li>
+        <li>
+          <a href="{% url 'my_tasks' %}"><i class="fa-solid fa-list-check"></i><span>My Tasks</span></a>
+        </li>
+        <li>
+          <a href="{% url 'user_profile' %}"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+        </li>
+         <li style="margin-top:auto;">
+          <a href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+          </a>
+          <form id="logoutForm" action="{% url 'logout' %}" method="post" style="display:none;">
+            {% csrf_token %}
+          </form>
+        </li>
+      </ul>
+    </nav>
+    <a href="javascript:void(0);" class="toggle-btn" data-resize-btn>
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+  </aside>
+
+  <!-- Top Navigation Bar -->
+  <div class="top-nav">
+    <div class="app-title">CollabSpace</div>
+  </div>
+
+  <main class="main">
+    <div class="header">
+      <h1>My Projects</h1>
+      <div class="filters">
+        <select id="sortProjects">
+          <option value="deadline">Sort by Deadline</option>
+          <option value="name">Sort by Name</option>
+          <option value="progress">Sort by Progress</option>
+        </select>
+
+        <select id="statusFilter">
+          <option>All Status</option>
+          <option>Planning</option>
+          <option>In Progress</option>
+          <option>Done</option>
+        </select>
+        
+         <button id="addProjectBtn">+ Add Project</button>
+
+      </div>
+    </div>
+
+    <!--  white box that contains active projects and paginator -->
+    <div class="active-box">
+      <!-- Wrap active projects -->
+      <div id="activeProjects">
+      {% for project in projects %}
+        <div class="project-card" id="project-card-{{ project.id }}" data-due="{{ project.due_date|date:'Y-m-d' }}">
+          <div class="project-title"> {{ project.title }} <span class="status {{ project.status }}">{{ project.get_status_display }}</span></div>
+          <p>{{ project.description }}</p>
+          <div style="margin-top:10px;">
+            Progress:&nbsp;{{ project_progress_dict|get_item:project.id }}% 
+            <progress value="{{ project_progress_dict|get_item:project.id }}" max="100" style="width:100%;"></progress> 
+          </div>
+          <div class="footer">
+            <div class="avatars">
+              {% for user in project.team_members.all %}
+                <span>{{ user.username|first }}</span>
+              {% endfor %}
+            </div>
+            <div>
+              Due: {{ project.due_date }}
+              <a href="{% url 'workspace' project.id %}" class="open-btn" style="background:#4338ca;color:#fff;padding:0.3rem 1.2rem;border:none;border-radius:6px;cursor:pointer;text-decoration:none;">Open</a>
+              <a href="#" class="edit-btn" data-id="{{ project.id }}" data-creator="{{ project.created_by.id }}"><i class="fa fa-pencil"></i></a>
+              <a href="{% url 'project_delete' project.pk %}" class="delete-btn" data-id="{{ project.id }}"><i class="fa fa-trash"></i></a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="project-card">No projects.</div>
+      {% endfor %}
+      </div>
+
+      <!--  paginator inside the same white box -->
+      {% if projects.paginator.num_pages > 1 %}
+        <nav class="paginator">
+          {% if projects.has_previous %}
+            <a href="?page={{ projects.previous_page_number }}&sort={{ sort_key }}{% if status_param %}&status={{ status_param }}{% endif %}">Previous</a>
+          {% else %}
+            <span class="disabled">Previous</span>
+          {% endif %}
+
+          <span>Page {{ projects.number }} of {{ projects.paginator.num_pages }}</span>
+
+          {% if projects.has_next %}
+            <a href="?page={{ projects.next_page_number }}&sort={{ sort_key }}{% if status_param %}&status={{ status_param }}{% endif %}">Next</a>
+          {% else %}
+            <span class="disabled">Next</span>
+          {% endif %}
+        </nav>
+      {% endif %}
+    </div>
+
+    {% if deleted_projects %}
+      <div id="deletedProjects">
+        <h3 style="margin:24px 0 12px;">Recently deleted (restore within 20 days)</h3>
+        {% for project in deleted_projects %}
+          <div class="project-card deleted" id="deleted-project-card-{{ project.id }}" style="opacity:0.6; filter:grayscale(1);" data-deleted="1">
+            <div class="project-title">
+              {{ project.title }} <span class="status planning">Deleted</span>
+            </div>
+            <p>{{ project.description }}</p>
+            <div class="footer">
+              <div class="avatars">
+                {% for user in project.team_members.all %}
+                  <span>{{ user.username|first }}</span>
+                {% endfor %}
+              </div>
+              <div>
+                <small style="margin-right:8px;">Days left: {{ days_left_by_id|get_item:project.id }}</small>
+                <button class="open-btn restore-btn" data-id="{{ project.id }}">Restore</button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </main>
+
+  <!-- Add Project Modal -->
+<div id="addProjectModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h2>Add Project</h2>
+    <form id="addProjectForm" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="projectTitle">Title</label>
+        <input type="text" id="projectTitle" name="title" placeholder="Project Title" maxlength="50" minlength="5" required>
+      </div>
+      <div class="form-group">
+        <label for="projectDescription">Description</label>
+        <textarea id="projectDescription" name="description" placeholder="Project Description" maxlength="150" minlength="15" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="projectDueDate">Due Date</label>
+        <input type="date" id="projectDueDate" name="due_date" required>
+      </div>
+      <div class="form-group">
+        <label for="projectStatus">Status</label>
+        <select id="projectStatus" name="status" required>
+          <option value="planning">Planning</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="projectTeamMembers">Team Members</label>
+        <select id="projectTeamMembers" name="team_members" multiple data-multi-select>
+          {% for member in team_members %}
+            <option value="{{ member.id }}" {% if member.id == user.id %}selected{% endif %}>{{ member.username }}</option>
+          {% endfor %}
+        </select>
+        <!-- Inside the Team Members form-group, added an empty error box -->
+      <div id="teamMembersError" style=" display:none; margin-top:8px; padding:10px; background:#fde2e2; color:#b91c1c; border-radius:6px;"></div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="cancel-btn" type="button" onclick="closeModal()">Cancel</button>
+        <button class="create-btn" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!--  MultiSelect CSS and JS -->
+<link href="{% static 'MultiSelect.css' %}" rel="stylesheet" type="text/css">
+<script src="{% static 'MultiSelect.js' %}"></script>
+
+<!-- Edit Project Modal -->
+<div id="editProjectModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeEditModal()">&times;</span>
+    <h2>Edit Project</h2>
+    <form id="editProjectForm" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="editProjectTitle">Title</label>
+        <input type="text" id="editProjectTitle" name="title" required>
+      </div>
+      <div class="form-group">
+        <label for="editProjectDescription">Description</label>
+        <textarea id="editProjectDescription" name="description" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="editProjectDueDate">Due Date</label>
+        <input type="date" id="editProjectDueDate" name="due_date" required>
+      </div>
+      <div class="form-group">
+        <label for="editProjectStatus">Status</label>
+        <select id="editProjectStatus" name="status" required>
+          <option value="planning">Planning</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editProjectTeamMembers">Team Members</label>
+        <select id="editProjectTeamMembers" name="team_members" multiple data-multi-select>
+          {% for member in team_members %}
+            <option value="{{ member.id }}">{{ member.username }}</option>
+          {% endfor %}
+        </select>
+        <div id="editTeamMembersError" style="display:none; margin-top:8px; padding:10px; background:#fde2e2; color:#b91c1c; border-radius:6px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" type="button" onclick="closeEditModal()">Cancel</button>
+        <button class="create-btn" type="submit">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- edit permission modal -->
+<div id="permissionModal" class="modal" style="display:none;">
+  <div class="modal-content" style="text-align:center;">
+    <p style="margin-bottom:2rem;">You have no permission to make modifications</p>
+    <button id="permissionOkBtn" class="create-btn" type="button" style="background:#ef4444;color:#fff;padding:0.5rem 1.5rem;border:none;border-radius:6px;margin-right:1rem;cursor:pointer;">OK</button>
+  </div>
+</div>
+
+<!-- Delete Project Modal -->
+<div id="deleteProjectModal" class="modal" style="display:none;">
+      <span class="close" onclick="closeDeleteModal()">&times;</span>
+
+  <div class="modal-content" id="deleteModalContent"></div>
+</div>
+
+<!-- Workspace Modal -->
+<div id="workspaceModal" class="modal" style="display:none;">
+  <span class="close" onclick="closeWorkspaceModal()">&times;</span>
+  <div class="modal-content" id="workspaceModalContent" style="max-width: 90vw; max-height: 90vh; overflow-y: auto;"></div>
+</div>
+
+  </main>
+
+  <!-- Past-date confirm modal -->
+<div id="dateConfirmModal" class="confirm-overlay">
+  <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="dateConfirmTitle">
+    <h4 id="dateConfirmTitle">Past due date selected</h4>
+    <p>The selected due date is in the past. Do you want to proceed?</p>
+    <div class="confirm-actions">
+      <button type="button" class="btn-cancel" id="dateConfirmCancel">Cancel</button>
+      <button type="button" class="btn-proceed" id="dateConfirmProceed">Proceed</button>
+    </div>
+  </div>
+</div>
+
+  <script>
+    const modal = document.getElementById("addProjectModal");
+const form = document.getElementById("addProjectForm");
+const formFieldsDiv = document.getElementById("formFields");
+
+// Past-date helpers (card confirm)
+const addDueInput = document.getElementById('projectDueDate');
+const editDueInput = document.getElementById('editProjectDueDate');
+
+function isPastDateStr(s) {
+  if (!s) return false;
+  const d = new Date(s);
+  const today = new Date();
+  d.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  return d < today;
+}
+
+// Show confirm “card” and resolve to true/false
+function openDateConfirm() {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dateConfirmModal');
+    const btnCancel = document.getElementById('dateConfirmCancel');
+    const btnProceed = document.getElementById('dateConfirmProceed');
+
+    function cleanup(result) {
+      overlay.style.display = 'none';
+      btnCancel.removeEventListener('click', onCancel);
+      btnProceed.removeEventListener('click', onProceed);
+      overlay.removeEventListener('click', onOverlay);
+      resolve(result);
+    }
+    function onCancel(e){ e.stopPropagation(); cleanup(false); }
+    function onProceed(e){ e.stopPropagation(); cleanup(true); }
+    function onOverlay(e){ if (e.target === overlay) cleanup(false); }
+
+    btnCancel.addEventListener('click', onCancel);
+    btnProceed.addEventListener('click', onProceed);
+    overlay.addEventListener('click', onOverlay);
+    overlay.style.display = 'flex';
+  });
+}
+
+// Async confirm for past date
+async function confirmPastAsync(inputEl) {
+  if (!inputEl) return true;
+  if (isPastDateStr(inputEl.value)) {
+    return await openDateConfirm();
+  }
+  return true;
+}
+
+// On change of date inputs, ask once
+[addDueInput, editDueInput].forEach(el => {
+  if (!el) return;
+  el.addEventListener('change', async function () {
+    if (isPastDateStr(this.value)) {
+      const ok = await openDateConfirm();
+      if (!ok) { this.value = ''; this.focus(); }
+    }
+  });
+});
+  
+    document.addEventListener('DOMContentLoaded', function() {
+      const resizeBtn = document.querySelector("[data-resize-btn]");
+
+      resizeBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        document.body.classList.toggle("sb-collapsed");
+      });
+           
+      
+      // Open project buttons
+      const openBtns = document.querySelectorAll(".open-btn");
+
+      attachProjectCardListeners();
+
+      
+    });
+
+    document.getElementById("addProjectBtn").addEventListener("click", function () {
+  modal.style.display = "flex";
+
+  
+});
+
+
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  if (!(await confirmPastAsync(addDueInput))) return;
+
+  // Collect selected team_members from MultiSelect hidden inputs
+  const selectedHidden = document.querySelectorAll('input[name="team_members"]');
+  const errorBox = document.getElementById('teamMembersError');
+  if (selectedHidden.length === 0) {
+    if (errorBox) {
+      errorBox.textContent = 'Select a name.';
+      errorBox.style.display = 'block';
+    }
+    return; // do not send request
+  } else if (errorBox) {
+    errorBox.style.display = 'none';
+  }
+
+  const formData = new FormData(form);
+  formData.delete('team_members');
+  selectedHidden.forEach(input => formData.append('team_members', input.value));
+
+  fetch("{% url 'project_create' %}", {
+    method: "POST",
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+    },
+    body: formData
+  })
+  .then(response => {
+    if (response.ok) {
+      Swal.fire({
+        title: "Project {{ project.title }} created successfully",
+        icon: "success",
+        draggable: true
+        }).then(() => {
+            location.reload();
+        });
+      
+    } else {
+      // Fallback: show server text if something else fails
+      return response.text().then(txt => {
+        if (errorBox) {
+          errorBox.textContent = txt || 'Error creating project.';
+          errorBox.style.display = 'block';
+        }
+      });
+    }
+  });
+});
+
+function closeModal() {
+  modal.style.display = "none";
+}
+
+function openEditModal(projectId) {
+  console.log('openEditModal called for project:', projectId);
+
+  fetch(`/projects/${projectId}/edit/json/`) // Adjust this URL to return JSON project data
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('editProjectTitle').value = data.title;
+      document.getElementById('editProjectDescription').value = data.description;
+      document.getElementById('editProjectDueDate').value = data.due_date;
+      document.getElementById('editProjectStatus').value = data.status;
+
+      // Set selected team members
+      const teamSelect = document.getElementById('editProjectTeamMembers');
+      Array.from(teamSelect.options).forEach(option => {
+        option.selected = data.team_members.includes(parseInt(option.value));
+      });
+
+      // If using MultiSelect.js, re-initialize or update it here if needed
+       // Remove the old MultiSelect widget
+      const oldWidget = teamSelect.parentElement.querySelector('.multi-select');
+      if (oldWidget) oldWidget.remove();
+      // Re-insert the original select (if needed)
+      teamSelect.style.display = '';
+      // Re-initialize MultiSelect
+      new MultiSelect(teamSelect);
+
+      document.getElementById('editProjectForm').action = `/projects/${projectId}/edit/`;
+      document.getElementById('editProjectModal').style.display = 'flex';
+    });
+}
+
+document.getElementById('editProjectForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const editForm = this;
+  const errorBox = document.getElementById('editTeamMembersError');
+
+  if (!confirmPast(document.getElementById('editProjectDueDate'))) return;
+
+  // Collect selected team member hidden inputs created by MultiSelect inside the edit modal
+  const selectedHidden = editForm.querySelectorAll('input[name="team_members"]');
+  if (selectedHidden.length === 0) {
+    if (errorBox) {
+      errorBox.textContent = 'Select a name.';
+      errorBox.style.display = 'block';
+    }
+    return;
+  } else if (errorBox) {
+    errorBox.style.display = 'none';
+  }
+
+  const formData = new FormData(editForm);
+  // Replace team_members values with hidden inputs (ensure consistency)
+  formData.delete('team_members');
+  selectedHidden.forEach(input => formData.append('team_members', input.value));
+
+  const actionUrl = editForm.action;
+  fetch(actionUrl, {
+    method: "POST",
+    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+    body: formData
+  }).then(response => {
+    if (response.ok) {
+      Swal.fire({
+        title: "Profile updated successfully",
+        icon: "success",
+        draggable: true
+        }).then(() => {
+            location.reload();
+        });
+      
+    } else {
+      return response.text().then(txt => {
+        if (errorBox) {
+          errorBox.textContent = txt || 'Error saving project.';
+          errorBox.style.display = 'block';
+        }
+      });
+    }
+  });
+});
+
+function closeEditModal() {
+  document.getElementById('editProjectModal').style.display = 'none';
+
+  // Remove MultiSelect widget and restore original
+  const teamSelect = document.getElementById('editProjectTeamMembers');
+  const oldWidget = teamSelect.parentElement.querySelector('.multi-select');
+  if (oldWidget) {
+    oldWidget.remove();
+    teamSelect.style.display = '';
+  }
+ location.reload();
+  
+}
+
+function toggleDropdown(btn) {
+  var content = btn.nextElementSibling;
+  content.style.display = content.style.display === 'none' ? 'block' : 'none';
+}
+
+// Delete project functionality
+function openDeleteModal(projectId) {
+ document.getElementById('deleteModalContent').innerHTML = `
+    <div style="padding:2rem; text-align:center;">
+      <h3 style="margin-bottom:1rem;">Are you sure you want to delete this project?</h3>
+      <button id="confirmDeleteBtn" style="background:#ef4444;color:#fff;padding:0.5rem 1.5rem;border:none;border-radius:6px;margin-right:1rem;cursor:pointer;">Delete</button>
+      <button id="cancelDeleteBtn" style="background:#e5e7eb;color:#333;padding:0.5rem 1.5rem;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
+    </div>
+  `;
+  document.getElementById('deleteProjectModal').style.display = 'flex';
+
+  document.getElementById('confirmDeleteBtn').onclick = function() {
+    fetch(`/projects/${projectId}/delete/`, {
+      method: "POST",
+      headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(response => {
+      if (response.ok) {
+        document.getElementById('deleteProjectModal').style.display = 'none';
+        location.reload(); // simplest and safest for your current setup
+      } else {
+        return response.text().then(html => {
+          document.getElementById('deleteModalContent').innerHTML = html;
+        });
+      }
+    });
+  };
+  document.getElementById('cancelDeleteBtn').onclick = function() {
+    document.getElementById('deleteProjectModal').style.display = 'none';
+  };
+}
+
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const projectId = this.getAttribute('data-id');
+    openDeleteModal(projectId);
+  });
+});
+
+function closeDeleteModal() {
+  document.getElementById('deleteProjectModal').style.display = 'none';
+}
+
+const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+const projectListSocket = new WebSocket(
+  wsScheme + '://' + window.location.hostname + ':8001/ws/projects/'
+);
+
+
+projectListSocket.onmessage = function(e) {
+  const data = JSON.parse(e.data);
+  if (data.action === "progress_update") {
+    // Refresh the project list to update progress bars
+    refreshProjectList();
+  }
+
+  if (["create", "edit", "delete","soft_delete", "undelete"].includes(data.action)) {
+    refreshProjectList();
+  }
+};
+
+function refreshProjectList() {
+  fetch(window.location.href) 
+    .then(response => response.text())
+    .then(html => {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const newMain = tempDiv.querySelector('main.main');
+      if (newMain) {
+        document.querySelector('main.main').innerHTML = newMain.innerHTML;
+        attachProjectCardListeners();
+
+        // Re-initialize MultiSelect for add project modal
+        const addTeamSelect = document.getElementById('projectTeamMembers');
+        if (addTeamSelect) {
+          const oldWidget = addTeamSelect.parentElement.querySelector('.multi-select');
+          if (oldWidget) oldWidget.remove();
+          addTeamSelect.style.display = '';
+          new MultiSelect(addTeamSelect);
+        }
+      }
+    });
+}
+
+
+function attachProjectCardListeners() {
+
+  const modal = document.getElementById("addProjectModal");
+  const addProjectBtn = document.getElementById("addProjectBtn");
+  if (addProjectBtn && modal) {
+    addProjectBtn.onclick = function () {
+      modal.style.display = "flex";
+    };
+  }
+
+  const addProjectCancelBtn = document.querySelector('#addProjectModal .cancel-btn');
+if (addProjectCancelBtn) {
+  addProjectCancelBtn.onclick = function () {
+    const modal = document.getElementById("addProjectModal");
+    if (modal) modal.style.display = "none";
+  };
+}
+  
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.onclick = function(e) {
+      e.preventDefault();
+      const projectId = this.getAttribute('data-id');
+      const creatorId = this.getAttribute('data-creator');
+      if (parseInt(CURRENT_USER_ID) !== parseInt(creatorId)) {
+        // Show permission modal
+        document.getElementById('permissionModal').style.display = 'flex';
+        return;
+      }
+      openEditModal(projectId);
+    };
+  });
+
+  // Permission modal OK button handler
+  document.getElementById('permissionOkBtn').onclick = function() {
+  document.getElementById('permissionModal').style.display = 'none';
+};
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.onclick = function(e) {
+      e.preventDefault();
+      const projectId = this.getAttribute('data-id');
+      openDeleteModal(projectId);
+    };
+  });
+
+  // Re-attach AJAX submit for edit form
+  const editForm = document.getElementById('editProjectForm');
+  if (editForm) {
+    editForm.onsubmit = async function(e) {
+      e.preventDefault();
+
+      if (!(await confirmPastAsync(document.getElementById('editProjectDueDate')))) return;
+
+      const errorBox = document.getElementById('editTeamMembersError');
+      const selectedHidden = editForm.querySelectorAll('input[name="team_members"]');
+      if (selectedHidden.length === 0) {
+        if (errorBox) {
+          errorBox.textContent = 'Select a name.';
+          errorBox.style.display = 'block';
+        }
+        return;
+      } else if (errorBox) {
+        errorBox.style.display = 'none';
+      }
+
+      const formData = new FormData(editForm);
+      formData.delete('team_members');
+      selectedHidden.forEach(input => formData.append('team_members', input.value));
+
+      const actionUrl = editForm.action;
+      fetch(actionUrl, {
+        method: "POST",
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+        body: formData
+      }).then(response => {
+        if (response.ok) {
+          location.reload();
+        } else {
+          return response.text().then(txt => {
+            if (errorBox) {
+              errorBox.textContent = txt || 'Error saving project.';
+              errorBox.style.display = 'block';
+            }
+          });
+        }
+      });
+    };
+  }
+
+// Undelete handler
+  document.querySelectorAll('.restore-btn').forEach(btn => {
+    btn.onclick = function(e) {
+      e.preventDefault();
+      const projectId = this.getAttribute('data-id');
+      fetch(`/projects/${projectId}/undelete/`, {
+        method: "POST",
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+      }).then(resp => {
+        if (resp.ok) {
+          location.reload(); // or refreshProjectList() if you prefer
+        }
+      });
+    };
+  });
+}
+
+// Sorting functionality
+document.getElementById('sortProjects').addEventListener('change', function () {
+    // Only reload if user triggered the event
+    if (this.dataset.userInitiated === "1") {
+        const sortVal = getSortParamFromSelect();
+        const statusVal = getStatusParamFromSelect();
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', 1);
+        url.searchParams.set('sort', sortVal);
+        if (statusVal) url.searchParams.set('status', statusVal);
+        else url.searchParams.delete('status');
+        window.location.href = url.toString();
+    }
+});
+
+// Mark user-triggered changes
+document.getElementById('sortProjects').addEventListener('mousedown', function () {
+    this.dataset.userInitiated = "1";
+});
+
+
+
+document.getElementById('statusFilter').addEventListener('change', function() {
+  const selectedStatus = this.value.toLowerCase().replace(/\s/g, '_');
+  const cards = document.querySelectorAll('.project-card');
+  cards.forEach(card => {
+    const statusSpan = card.querySelector('.status');
+    if (this.value === "All Status" || statusSpan.classList.contains(selectedStatus)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+});
+
+// Apply status filter from ?status=... (planning | in_progress | done)
+(function applyStatusFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('status'); // e.g., in_progress, done
+  if (!q) return;
+  const map = { planning: 'Planning', in_progress: 'In Progress', done: 'Done' };
+  const val = map[q];
+  if (!val) return;
+  const sel = document.getElementById('statusFilter');
+  if (sel) {
+    sel.value = val;
+  
+  }
+})();
+
+// Also re-apply after the list is refreshed via AJAX
+const _origRefresh = refreshProjectList;
+refreshProjectList = function() {
+  fetch(window.location.href)
+    .then(r => r.text())
+    .then(html => {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const newMain = tempDiv.querySelector('main.main');
+      if (newMain) {
+        document.querySelector('main.main').innerHTML = newMain.innerHTML;
+        attachProjectCardListeners();
+        // re-init MultiSelect for add modal
+        const addTeamSelect = document.getElementById('projectTeamMembers');
+        if (addTeamSelect) {
+          const oldWidget = addTeamSelect.parentElement.querySelector('.multi-select');
+          if (oldWidget) oldWidget.remove();
+          addTeamSelect.style.display = '';
+          new MultiSelect(addTeamSelect);
+        }
+        // re-apply status from query
+        (function applyStatusFromQueryAfterRefresh() {
+          const params = new URLSearchParams(window.location.search);
+          const q = params.get('status');
+          const map = { planning: 'Planning', in_progress: 'In Progress', done: 'Done' };
+          const val = q ? map[q] : null;
+          const sel = document.getElementById('statusFilter');
+          if (val && sel) {
+            sel.value = val;
+            sel.dispatchEvent(new Event('change'));
+          }
+        })();
+      }
+    });
+};
+
+
+
+// Map "Status" select <-> query value
+function getStatusParamFromSelect() {
+  const sel = document.getElementById('statusFilter');
+  if (!sel) return null;
+  const v = sel.value;
+  if (v === 'All Status') return null;
+  if (v === 'Planning') return 'planning';
+  if (v === 'In Progress') return 'in_progress';
+  if (v === 'Done') return 'done';
+  return null;
+}
+function setStatusSelectFromParam(q) {
+  const sel = document.getElementById('statusFilter');
+  if (!sel) return;
+  const map = { planning: 'Planning', in_progress: 'In Progress', done: 'Done' };
+  if (q && map[q]) {
+    sel.value = map[q];
+    
+  }
+}
+
+// Sort param helpers
+function getSortParamFromSelect() {
+  const sel = document.getElementById('sortProjects');
+  return sel ? sel.value : 'deadline';
+}
+function setSortSelectFromParam(q) {
+  const sel = document.getElementById('sortProjects');
+  if (!sel) return;
+  const allowed = ['deadline','name','progress'];
+  const val = allowed.includes(q) ? q : 'deadline';
+  sel.value = val;
+  
+}
+
+// Keep params in the URL bar (no reload)
+function updateUrlQuery(sortVal, statusVal) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('sort', sortVal || 'deadline');
+  if (statusVal) url.searchParams.set('status', statusVal); else url.searchParams.delete('status');
+  history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
+}
+
+// Make paginator links carry the current sort/status
+function updatePaginatorLinks() {
+  const statusParam = getStatusParamFromSelect();
+  const sortParam = getSortParamFromSelect();
+  document.querySelectorAll('nav.paginator a').forEach(a => {
+    const linkUrl = new URL(a.getAttribute('href'), window.location.href);
+    const page = linkUrl.searchParams.get('page') || '1';
+    const u = new URL(window.location.href);
+    u.searchParams.set('page', page);
+    u.searchParams.set('sort', sortParam || 'deadline');
+    if (statusParam) u.searchParams.set('status', statusParam); else u.searchParams.delete('status');
+    a.href = u.pathname + '?' + u.searchParams.toString();
+  });
+}
+
+// Restore from query on first load
+(function restoreFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const statusQ = params.get('status');
+  const sortQ = params.get('sort');
+  if (sortQ) setSortSelectFromParam(sortQ);
+  if (statusQ) setStatusSelectFromParam(statusQ);
+  // ensure paginator reflects current params
+  updatePaginatorLinks();
+})();
+
+// When user changes controls, persist and update paginator links
+document.getElementById('sortProjects').addEventListener('change', function () {
+  updateUrlQuery(getSortParamFromSelect(), getStatusParamFromSelect());
+  updatePaginatorLinks();
+});
+document.getElementById('statusFilter').addEventListener('change', function () {
+  updateUrlQuery(getSortParamFromSelect(), getStatusParamFromSelect());
+  updatePaginatorLinks();
+});
+
+  const CURRENT_USER_ID = "{{ user.id }}";
+
+  </script>
+</body>
+</html>

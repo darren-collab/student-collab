@@ -1,0 +1,453 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+	<link href="{% static 'dashboard_style.css'%}" rel="stylesheet">
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>CollabSpace Dashboard</title>
+  <style>
+    .donut-wrap {
+      margin-top: 24px; background:#fff; border-radius:12px; padding:16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.06); 
+      width:100%;
+    }
+    .donut-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .donut-title { margin:0; font-size:1rem; font-weight:600; }
+    .donut-filter { padding:6px 10px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
+    #taskStatusDonut { width:100% !important; height:460px !important; } /* smaller */
+  </style>
+</head>
+<body class="sb-expand">
+  <aside class="sidebar">
+    <nav>
+	<ul>
+	
+	<li>
+	      <a href="{% url 'dashboard' %}" class="active"> <i class="fa-solid fa-house"></i><span>Dashboard</span> </a>
+	</li>
+	
+	<li>
+	      <a href="{% url 'project_list' %}"> <i class="fa-solid fa-folder"></i> <span>Projects</span> </a>
+
+	</li>
+	
+	<li>
+	      <a href="{% url 'my_tasks' %}">  <i class="fa-solid fa-list-check"></i> <span>My Tasks</span> </a>
+
+	</li>
+	
+	<li>
+	      <a href="{% url 'user_profile' %}">  <i class="fa-solid fa-user"></i> <span>Profile</span> </a>
+
+	</li>
+
+  <li style="margin-top:auto;">
+  <a href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+    <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+  </a>
+  <form id="logoutForm" action="{% url 'logout' %}" method="post" style="display:none;">
+    {% csrf_token %}
+  </form>
+</li>
+	</ul>
+    </nav>
+	<a href="javascript:void(0);" class="toggle-btn" data-resize-btn>
+  <i class="fa-solid fa-chevron-right"></i>
+</a>
+
+
+	
+  </aside>
+
+  <!-- Top Navigation Bar -->
+  <div class="top-nav">
+    <div class="app-title">CollabSpace</div>
+  </div>
+
+  <main class="main">
+  <!-- Dashboard View -->
+  <div id="dashboard-view">
+    <div class="card-container">
+      <div class="card" data-href="{% url 'project_list' %}" tabindex="0" role="link" aria-label="Open Projects"data-href="{% url 'project_list' %}" tabindex="0" role="link" aria-label="Open Projects">
+        <h4>Total Projects</h4>
+        <p>{{ total_projects }}</p>
+      </div>
+      <div class="card" data-href="{% url 'project_list' %}?status=in_progress" tabindex="0" role="link" aria-label="Open In‑Progress Projects">
+        <h4>Projects In Progress</h4>
+        <p>{{ in_progress_projects }}</p>
+      </div>
+      <div class="card"  data-href="{% url 'project_list' %}?status=done" tabindex="0" role="link" aria-label="Open Completed Projects">
+        <h4> Projects Completed</h4>
+        <p>{{ completed_projects }}</p>
+      </div>
+    </div>
+
+      <div class="dashboard-content">
+        <div class="tasks-container">
+          <div class="tasks">
+            <h3>My Tasks </h3>
+
+            {% if latest_tasks %}
+              {% for task in latest_tasks %}
+                <div class="task" data-href="{% url 'workspace' task.project.id %}#tasks" style="cursor:pointer;">
+                  <div class="task-info">
+                    <span class="task-project">{{ task.project.title }}</span>
+                    <span class="task-name">{{ task.name }}</span>
+                    {% if task.due_date %}
+                      <span class="task-due">Due {{ task.due_date }}</span>
+                    {% endif %}
+                  </div>
+                  <div class="task-actions">
+                    <div class="priority {{ task.priority }}"></div>
+                    <span class="status {{ task.get_status_display|slugify }}">{{ task.get_status_display }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="task">
+                <div class="task-info">
+                  <span class="task-name">No tasks assigned.</span>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="activity">
+          <h3>Team workload</h3>
+          {% if teammates_overview %}
+            <ul class="activity-log">
+              {% for t in teammates_overview %}
+                <li style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:30px;height:30px;border-radius:50%;background:#eef;display:flex;align-items:center;justify-content:center;font-weight:600;">
+                    {{ t.initials }}
+                  </div>
+                  <div style="flex:1;">
+                    <strong>{{ t.name }} {%if t.is_you%} (You) {%endif%}</strong>
+                    <div style="font-size:.9rem;color:#6b7280;">
+                      {{ t.total }} tasks • {{ t.percent }}% done • {{ t.overdue }} overdue
+                    </div>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No teammates found in your projects.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="donut-wrap">
+        <div class="donut-header">
+          <h3 class="donut-title">Breakdown</h3>
+          <select id="donutFilter" class="donut-filter">
+            <option value="task_status" selected>Task status</option>
+            <option value="task_priority">Task priority</option>
+            <option value="project_status">Project status</option>
+          </select>
+        </div>
+        <canvas id="taskStatusDonut" aria-label="Breakdown donut" role="img"></canvas>
+      </div>
+    </div>
+   
+  {{ chart_data|json_script:"chart-data" }}
+  </main>
+
+    
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get all sidebar links
+    const dashboardLink = document.querySelector('.dashboard-link');
+    const projectsLink = document.querySelector('.projects-link');
+    const tasksLink = document.querySelector('.tasks-link');
+    const calendarLink = document.querySelector('.calendar-link');
+    const chatLink = document.querySelector('.chat-link');
+    const profileLink = document.querySelector('.profile-link');
+    
+		const resizeBtn = document.querySelector("[data-resize-btn]");
+
+// Make cards with data-href clickable (keyboard accessible)
+    document.querySelectorAll('.card[data-href]').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => window.location.href = card.dataset.href);
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          window.location.href = card.dataset.href;
+        }
+      });
+    });
+
+	resizeBtn.addEventListener("click", function (e) {
+	  e.preventDefault();
+	  document.body.classList.toggle("sb-expand");
+	});	  
+      // Get all views
+      const dashboardView = document.getElementById('dashboard-view');
+      
+	
+	  
+      
+
+    // Make dashboard tasks navigate to Workspace -> Tasks tab
+    document.querySelectorAll('.tasks .task').forEach(card => {
+      card.addEventListener('click', () => {
+        const href = card.dataset.href;
+        if (!href) return;
+        localStorage.setItem('activeWorkspaceTab', 'tasks');
+        window.location.href = href;
+      });
+    });
+
+     // Donut chart with switchable datasets
+      const ctx = document.getElementById('taskStatusDonut');
+      const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+      const donutFilter = document.getElementById('donutFilter');
+
+      function toDataset(obj, kind) {
+        const orders = {
+          task_status: ['To-do', 'In Progress', 'Done'],
+          task_priority: ['Low', 'Medium', 'High'],
+          project_status: ['Planning', 'In Progress', 'Done'],
+        };
+        const colors = {
+          'To-do': '#f59e0b', 'In Progress': '#3b82f6', 'Done': '#10b981',
+          'Low': '#22c55e', 'Medium': '#f59e0b', 'High': '#ef4444',
+          'Planning': '#a78bfa', 'In Progress': '#3b82f6', 'Done': '#10b981',
+        };
+        const labels = orders[kind];
+        const data = labels.map(l => obj[kind][l] || 0);
+        const backgroundColor = labels.map(l => colors[l]);
+        return { labels, data, backgroundColor };
+      }
+
+    // Restore previous selection (if any)
+    let savedKind = localStorage.getItem('donutFilter');
+    if (!['task_status','task_priority','project_status'].includes(savedKind)) {
+      savedKind = 'task_status';
+    }
+    // Set the select to saved value
+    donutFilter.value = savedKind;
+
+    let currentKind = savedKind;
+    const initial = toDataset(chartData, currentKind);
+
+function isAllZero(obj) {
+        const keys = ['task_status','task_priority','project_status'];
+        for (const k of keys) {
+          if (!obj[k]) continue;
+          for (const v of Object.values(obj[k])) {
+            if (v > 0) return false;
+          }
+        }
+        return true;
+      }
+
+    let donut;
+     if (ctx && window.Chart) {
+      if (isAllZero(chartData)) {
+        // Placeholder donut
+        donut = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['No data'],
+            datasets: [{
+              data: [1],
+              backgroundColor: ['#e5e7eb'],
+              borderColor: '#ffffff',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false }
+            },
+            cutout: '60%'
+          }
+        });
+        // Disable filter select (optional)
+        donutFilter.disabled = true;
+      } else {
+        donut = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: initial.labels,
+            datasets: [{
+              data: initial.data,
+              backgroundColor: initial.backgroundColor,
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              hoverOffset: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true } },
+            cutout: '60%',
+          }
+        });
+      }
+    }
+
+    
+    // On change: update chart + persist value
+    donutFilter.addEventListener('change', function() {
+      if (donutFilter.disabled) return;
+      currentKind = this.value;
+      localStorage.setItem('donutFilter', currentKind);
+      const ds = toDataset(chartData, currentKind);
+      donut.data.labels = ds.labels;
+      donut.data.datasets[0].data = ds.data;
+      donut.data.datasets[0].backgroundColor = ds.backgroundColor;
+      donut.update();
+    });
+
+    // Make dashboard tasks navigate to Workspace -> Tasks tab
+    document.querySelectorAll('.tasks .task').forEach(card => {
+      card.addEventListener('click', () => {
+        const href = card.dataset.href;
+        if (!href) return;
+        localStorage.setItem('activeWorkspaceTab', 'tasks');
+        window.location.href = href;
+      });
+    });
+   // h real-time dashboard refresh
+    function refreshDashboard() {
+      fetch(window.location.href)
+        .then(r => r.text())
+        .then(html => {
+          const temp = document.createElement('div');
+          temp.innerHTML = html;
+
+          // Replace the main content only
+          const newMain = temp.querySelector('main.main');
+          const curMain = document.querySelector('main.main');
+          if (newMain && curMain) {
+            curMain.innerHTML = newMain.innerHTML;
+
+            // Re-bind card click handlers after DOM replacement
+            document.querySelectorAll('.card[data-href]').forEach(card => {
+              card.style.cursor = 'pointer';
+              card.addEventListener('click', () => window.location.href = card.dataset.href);
+              card.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  window.location.href = card.dataset.href;
+                }
+              });
+            });
+
+            // Re-bind dashboard task navigation
+            document.querySelectorAll('.tasks .task').forEach(card => {
+              card.addEventListener('click', () => {
+                const href = card.dataset.href;
+                if (!href) return;
+                localStorage.setItem('activeWorkspaceTab', 'tasks');
+                window.location.href = href;
+              });
+            });
+
+            // Re-init donut chart after replacement
+            const ctx = document.getElementById('taskStatusDonut');
+            const donutFilter = document.getElementById('donutFilter');
+            const chartDataScript = document.getElementById('chart-data');
+            if (ctx && donutFilter && chartDataScript && window.Chart) {
+              const chartData = JSON.parse(chartDataScript.textContent);
+              function toDataset(obj, kind) {
+                const orders = {
+                  task_status: ['To-do', 'In Progress', 'Done'],
+                  task_priority: ['Low', 'Medium', 'High'],
+                  project_status: ['Planning', 'In Progress', 'Done'],
+                };
+                const colors = {
+                  'To-do': '#f59e0b', 'In Progress': '#3b82f6', 'Done': '#10b981',
+                  'Low': '#22c55e', 'Medium': '#f59e0b', 'High': '#ef4444',
+                  'Planning': '#a78bfa', 'In Progress': '#3b82f6', 'Done': '#10b981',
+                };
+                const labels = orders[kind];
+                const data = labels.map(l => (obj[kind] && obj[kind][l]) ? obj[kind][l] : 0);
+                const backgroundColor = labels.map(l => colors[l]);
+                return { labels, data, backgroundColor };
+              }
+              function isAllZero(obj) {
+                const keys = ['task_status','task_priority','project_status'];
+                for (const k of keys) {
+                  if (!obj[k]) continue;
+                  for (const v of Object.values(obj[k])) {
+                    if (v > 0) return false;
+                  }
+                }
+                return true;
+              }
+
+              let savedKind = localStorage.getItem('donutFilter');
+              if (!['task_status','task_priority','project_status'].includes(savedKind)) {
+                savedKind = 'task_status';
+              }
+              donutFilter.value = savedKind;
+
+              const initial = toDataset(chartData, savedKind);
+              const optionsEmpty = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                cutout: '60%'
+              };
+              const optionsNormal = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true } },
+                cutout: '60%'
+              };
+
+              const donut = new Chart(ctx, {
+                type: 'doughnut',
+                data: isAllZero(chartData)
+                  ? { labels: ['No data'], datasets: [{ data: [1], backgroundColor: ['#e5e7eb'], borderColor: '#ffffff', borderWidth: 2 }] }
+                  : { labels: initial.labels, datasets: [{ data: initial.data, backgroundColor: initial.backgroundColor, borderColor: '#ffffff', borderWidth: 2, hoverOffset: 6 }] },
+                options: isAllZero(chartData) ? optionsEmpty : optionsNormal
+              });
+              donutFilter.disabled = isAllZero(chartData);
+
+              donutFilter.addEventListener('change', function() {
+                if (donutFilter.disabled) return;
+                const kind = this.value;
+                localStorage.setItem('donutFilter', kind);
+                const ds = toDataset(chartData, kind);
+                donut.data.labels = ds.labels;
+                donut.data.datasets[0].data = ds.data;
+                donut.data.datasets[0].backgroundColor = ds.backgroundColor;
+                donut.update();
+              });
+            }
+          }
+        });
+    }
+
+    // WebSocket: listen to global projects group for changes
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const currentPort = window.location.port;
+    const wsPort = (currentPort === "8000") ? "8001" : currentPort;
+    const wsHost = window.location.hostname + (wsPort ? (":" + wsPort) : "");
+    const projectsSocket = new WebSocket(`${wsScheme}://${wsHost}/ws/projects/`);
+
+    projectsSocket.onmessage = function(e) {
+      const msg = JSON.parse(e.data);
+      // Actions: progress_update, create, edit, delete, soft_delete, undelete
+      // Any of these should refresh the dashboard view
+      refreshDashboard();
+    };
+    projectsSocket.onclose = function() {
+      console.warn('Projects WebSocket closed');
+    };
+  });
+  </script>
+</body>
+</html>

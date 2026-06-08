@@ -1,0 +1,219 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link href="https://lottie.host/37334862-56e4-4429-9a03-441ee26f2f39/LR3htEELkT.lottie">
+  <link href="dashboard_style.css" rel="stylesheet">
+  <title>CollabSpace - Homepage</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+    }
+
+    .homepage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .homepage-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      max-width: 1000px;
+      width: 100%;
+      margin-bottom: 3rem;
+    }
+
+	#lottie-background {
+	  flex: 1;
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
+	}
+
+    #vid-background video {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      object-fit: cover;
+      opacity: 0.35; /* make it look like a background */
+      pointer-events: none; /* prevent blocking clicks */
+    }
+
+    /* Text overlay next to video */
+    .homepage-text {
+	flex: 2;
+	margin-left: -50px; /* overlaps the Lottie a bit */
+	z-index: 1;
+    }
+
+    .homepage-text h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .highlight-word {
+      color: #4f46e5;
+    }
+
+    .homepage-text p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: #444;
+      margin-bottom: 2rem;
+      max-width: 600px;
+    }
+
+    .btn-container {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      background-color: #6960FC;
+      color: #fff;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #3C34C7;
+    }
+
+    /* Feature section cards */
+    .feature-section {
+      margin-top: 3rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+      text-align: center;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card i {
+      font-size: 2rem;
+      color: #4f46e5;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 {
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #666;
+    }
+	
+	 #gif-container {
+      width: 400px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="homepage">
+    <div class="homepage-content">
+      <!-- Video Background -->
+      <section id="vid-background">
+	  
+		<div id="gif-container">
+		  <img id="gifPlayer" src="" width="400">
+		</div>
+
+
+		
+		
+      </section>
+
+      <!-- Text Over Video -->
+      <div class="homepage-text">
+        <h1>Welcome to <span class="highlight-word">CollabSpace</span></h1>
+        <p>Collaborate, organize, and track your projects with ease. 
+           CollabSpace helps teams stay connected with real-time chat, 
+           file sharing, as well as progress and task tracking — all in one platform.</p>
+        <div class="btn-container">
+          <a href="{% url 'login' %}" class="btn">Login</a>
+          <a href="{% url 'signup' %}" class="btn">Signup</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="feature-section">
+      <div class="card">
+        <i class="fa-solid fa-folder"></i>
+        <h3>Projects</h3>
+        <p>Create and manage projects with your team members efficiently.</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-list-check"></i>
+        <h3>Tasks</h3>
+        <p>Assign, track, and complete tasks with real-time updates.</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-comments"></i>
+        <h3>Chat</h3>
+        <p>Stay connected with your teammates using real-time group chat.</p>
+      </div>
+    </div>
+  </div>
+   
+  <script>
+    const gifs = [
+    {src: "{% static 'img/File-Sharing-unscreen.gif' %}", duration: 3000},
+    {src: "{% static 'img/task.gif' %}", duration: 4000},
+    {src: "{% static 'img/Chat2-unscreen.gif' %}", duration: 3500}
+  ];
+
+  let current = 0;
+  const gifPlayer = document.getElementById("gifPlayer");
+
+  function playGif(index) {
+    if (index >= gifs.length) return; // stop when finished
+
+    gifPlayer.src = gifs[index].src;
+
+    setTimeout(() => {
+      current = (index + 1) % gifs.length;
+      playGif(current);
+    }, gifs[index].duration);
+  }
+
+  // Start playing from the first GIF
+  playGif(0);
+  </script>
+</body>
+</html>
